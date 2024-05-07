@@ -67,3 +67,5 @@ lsp/
 
 *.swp
 *.swo
+
+.azure
