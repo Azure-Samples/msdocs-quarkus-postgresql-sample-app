@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/devcontainers/java:1-17-bookworm
+FROM mcr.microsoft.com/devcontainers/java:21-bookworm
 
 ARG INSTALL_MAVEN="true"
 ARG MAVEN_VERSION=""
