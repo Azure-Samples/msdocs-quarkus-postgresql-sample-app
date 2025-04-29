@@ -16,11 +16,12 @@ param databasePassword string
 param principalId string = ''
 
 var resourceToken = toLower(uniqueString(subscription().id, name, location))
+var tags = { 'azd-env-name': name }
 
 resource resourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' = {
   name: '${name}_group'
   location: location
-  tags: { 'azd-env-name': name }
+  tags: tags
 }
 
 module resources 'resources.bicep' = {
@@ -30,6 +31,7 @@ module resources 'resources.bicep' = {
     name: name
     location: location
     resourceToken: resourceToken
+    tags: tags
     databasePassword: databasePassword
     principalId: principalId
   }
