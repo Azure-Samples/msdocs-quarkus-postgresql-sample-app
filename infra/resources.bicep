@@ -529,4 +529,3 @@ output CONNECTION_SETTINGS array = map(concat(dbConnector.listConfigurations().c
 output WEB_APP_LOG_STREAM string = format('https://portal.azure.com/#@/resource{0}/logStream', web.id)
 output WEB_APP_SSH string = format('https://{0}.scm.azurewebsites.net/webssh/host', web.name)
 output WEB_APP_CONFIG string = format('https://portal.azure.com/#@/resource{0}/environmentVariablesAppSettings', web.id)
-output AZURE_KEY_VAULT_NAME string = keyVault.name
