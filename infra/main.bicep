@@ -1,7 +1,7 @@
 targetScope = 'subscription'
 
 @minLength(1)
-@maxLength(64)
+@maxLength(25)
 @description('Name which is used to generate a short unique hash for each resource')
 param name string
 

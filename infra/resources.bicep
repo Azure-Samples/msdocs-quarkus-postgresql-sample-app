@@ -145,7 +145,7 @@ resource privateDnsZoneDB 'Microsoft.Network/privateDnsZones@2024-06-01' = {
   }  
 }
 
-// Resources needed to secure Redis Cache behind a private endpoint
+// Resources needed to secure Azure Managed Redis behind a private endpoint
 resource cachePrivateEndpoint 'Microsoft.Network/privateEndpoints@2024-03-01' = {
   name: '${appName}-cache-privateEndpoint'
   location: location
@@ -158,7 +158,7 @@ resource cachePrivateEndpoint 'Microsoft.Network/privateEndpoints@2024-03-01' = 
         name: '${appName}-cache-privateEndpoint'
         properties: {
           privateLinkServiceId: redisCache.id
-          groupIds: ['redisCache']
+          groupIds: ['redisEnterprise']
         }
       }
     ]
@@ -178,7 +178,7 @@ resource cachePrivateEndpoint 'Microsoft.Network/privateEndpoints@2024-03-01' = 
   }
 }
 resource privateDnsZoneCache 'Microsoft.Network/privateDnsZones@2024-06-01' = {
-  name: 'privatelink.redis.cache.windows.net'
+  name: 'privatelink.redisenterprise.cache.azure.net'
   location: 'global'
   dependsOn: [
     virtualNetwork
@@ -195,7 +195,7 @@ resource privateDnsZoneCache 'Microsoft.Network/privateDnsZones@2024-06-01' = {
   }  
 }
 
-// The Key Vault is used to manage SQL database and redis secrets.
+// The Key Vault is used to manage PostgreSQL and Azure Managed Redis secrets.
 // Current user has the admin permissions to configure key vault secrets, but by default doesn't have the permissions to read them.
 resource keyVault 'Microsoft.KeyVault/vaults@2022-07-01' = {
   name: '${take(replace(appName, '-', ''), 17)}-vault'
@@ -229,7 +229,7 @@ resource keyVaultSecretUserRoleAssignment 'Microsoft.Authorization/roleAssignmen
   }
 }
 
-resource dbserver 'Microsoft.DBforPostgreSQL/flexibleServers@2022-01-20-preview' = {
+resource dbserver 'Microsoft.DBforPostgreSQL/flexibleServers@2024-08-01' = {
   location: location
   tags: tags
   name: pgServerName
@@ -238,7 +238,7 @@ resource dbserver 'Microsoft.DBforPostgreSQL/flexibleServers@2022-01-20-preview'
     tier: 'Burstable'
   }
   properties: {
-    version: '12'
+    version: '16'
     administratorLogin: 'postgresadmin'
     administratorLoginPassword: databasePassword
     storage: {
@@ -271,21 +271,24 @@ resource dbserver 'Microsoft.DBforPostgreSQL/flexibleServers@2022-01-20-preview'
   ]
 }
 
-// The Redis cache is configured to the minimum pricing tier
-resource redisCache 'Microsoft.Cache/redis@2024-11-01' = {
+// Azure Managed Redis is configured to the Balanced_B0 pricing tier.
+resource redisCache 'Microsoft.Cache/redisEnterprise@2026-02-01-preview' = {
   name: '${appName}-cache'
   location: location
+  tags: tags
+  sku: {
+    name: 'Balanced_B0'
+  }
   properties: {
-    sku: {
-      name: 'Basic'
-      family: 'C'
-      capacity: 0
-    }
-    redisConfiguration: {}
-    enableNonSslPort: false
-    redisVersion: '6'
-    publicNetworkAccess: 'Disabled'
     minimumTlsVersion: '1.2'
+    publicNetworkAccess: 'Disabled'
+  }
+  resource redisDatabase 'databases@2026-02-01-preview' = {
+    name: 'default'
+    properties: {
+      accessKeysAuthentication: 'Enabled'
+      clientProtocol: 'Encrypted'
+    }
   }
 }
 
@@ -308,7 +311,7 @@ resource web 'Microsoft.Web/sites@2024-04-01' = {
   tags: union(tags, { 'azd-service-name': 'web' }) // Needed by AZD
   properties: {
     siteConfig: {
-      linuxFxVersion: 'JAVA|21-java21' // Set to Java 21, Java SE
+      linuxFxVersion: 'JAVA|25-java25' // Set to Java 25, Java SE
       vnetRouteAllEnabled: true // Route outbound traffic to the VNET
       ftpsState: 'Disabled'
       minTlsVersion: '1.2'
@@ -420,14 +423,14 @@ resource dbConnector 'Microsoft.ServiceLinker/linkers@2024-04-01' = {
   }
 }
 
-// Service Connector from the app to the cache, which generates an app setting for the App Service app
+// Service Connector from the app to Azure Managed Redis, which generates an app setting for the App Service app
 resource cacheConnector 'Microsoft.ServiceLinker/linkers@2024-04-01' = {
   scope: web
   name: 'RedisConnector'
   properties: {
     targetService: {
       type: 'AzureResource'
-      id:  resourceId('Microsoft.Cache/Redis/Databases', redisCache.name, '0')
+      id: redisCache::redisDatabase.id
     }
     authInfo: {
       authType: 'accessKey'
@@ -509,8 +512,7 @@ var aggregatedAppSettings = union(
   reduce(dbConnector.listConfigurations().configurations, {}, (cur, next) => union(cur, { '${next.name}': checkAndFormatSecrets(next) })), 
   reduce(cacheConnector.listConfigurations().configurations, {}, (cur, next) => union(cur, { '${next.name}': checkAndFormatSecrets(next) })), 
   {
-    // Add other app settings here, for example:
-    // 'FOO': 'BAR'
+    JAVA_OPTS: '--add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.invoke=ALL-UNNAMED'
   }
 )
 resource appsettings 'Microsoft.Web/sites/config@2024-04-01' = {
@@ -525,6 +527,7 @@ resource appsettings 'Microsoft.Web/sites/config@2024-04-01' = {
 // is a workaround to ensure that the app settings are aggregated correctly and consistent across multiple deployments.
 output WEB_URI string = 'https://${web.properties.defaultHostName}'
 
+#disable-next-line outputs-should-not-contain-secrets // Only configuration names are returned.
 output CONNECTION_SETTINGS array = map(concat(dbConnector.listConfigurations().configurations, cacheConnector.listConfigurations().configurations, vaultConnector.listConfigurations().configurations), config => config.name)
 output WEB_APP_LOG_STREAM string = format('https://portal.azure.com/#@/resource{0}/logStream', web.id)
 output WEB_APP_SSH string = format('https://{0}.scm.azurewebsites.net/webssh/host', web.name)

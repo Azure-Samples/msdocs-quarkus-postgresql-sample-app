@@ -53,7 +53,19 @@ Steps for deployment:
     azd auth login
     ```
 
-4. Provision and deploy all the resources:
+4. Create an environment with a unique name of no more than 25 characters.
+
+    ```shell
+    azd env new <environment-name>
+    ```
+
+5. Preview the infrastructure changes:
+
+    ```shell
+    azd provision --preview
+    ```
+
+6. Provision and deploy all the resources:
 
     ```shell
     azd up
@@ -61,9 +73,9 @@ Steps for deployment:
 
     It will prompt you to create a deployment environment name, pick a subscription, and provide a location (like `westeurope`). Then it will provision the resources in your account and deploy the latest code. If you get an error with deployment, changing the location (like to "centralus") can help, as there may be availability constraints for some of the resources.
 
-5. When `azd` has finished deploying, you'll see an endpoint URI in the command output. Visit that URI, and you should see the CRUD app! 🎉 If you see an error, open the Azure Portal from the URL in the command output, navigate to the App Service, select Logstream, and check the logs for any errors.
+7. When `azd` has finished deploying, you'll see an endpoint URI in the command output. Visit that URI, and you should see the CRUD app! 🎉 If you see an error, open the Azure Portal from the URL in the command output, navigate to the App Service, select Logstream, and check the logs for any errors.
 
-6. When you've made any changes to the app code, you can just run:
+8. When you've made any changes to the app code, you can just run:
 
     ```shell
     azd deploy
