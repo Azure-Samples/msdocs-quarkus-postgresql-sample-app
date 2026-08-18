@@ -510,6 +510,8 @@ var aggregatedAppSettings = union(
   reduce(vaultConnector.listConfigurations().configurations, {}, (cur, next) => union(cur, { '${next.name}': checkAndFormatSecrets(next) })), 
   reduce(dbConnector.listConfigurations().configurations, {}, (cur, next) => union(cur, { '${next.name}': checkAndFormatSecrets(next) })), 
   reduce(cacheConnector.listConfigurations().configurations, {}, (cur, next) => union(cur, { '${next.name}': checkAndFormatSecrets(next) })), 
+  // App Service launches the Quarkus Uber-Jar with -cp, bypassing its Add-Opens manifest entries.
+  // On Java 24+, open java.lang so JBoss Threads can clear thread-local state when worker threads stop.
   {
     JAVA_OPTS: '--add-opens=java.base/java.lang=ALL-UNNAMED'
   }
