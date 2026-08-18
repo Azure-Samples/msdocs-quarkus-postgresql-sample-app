@@ -511,7 +511,7 @@ var aggregatedAppSettings = union(
   reduce(dbConnector.listConfigurations().configurations, {}, (cur, next) => union(cur, { '${next.name}': checkAndFormatSecrets(next) })), 
   reduce(cacheConnector.listConfigurations().configurations, {}, (cur, next) => union(cur, { '${next.name}': checkAndFormatSecrets(next) })), 
   {
-    JAVA_OPTS: '--add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.invoke=ALL-UNNAMED'
+    JAVA_OPTS: '--add-opens=java.base/java.lang=ALL-UNNAMED'
   }
 )
 resource appsettings 'Microsoft.Web/sites/config@2024-04-01' = {
