@@ -6,7 +6,6 @@ The dev container configuration lets you open the repository in a [GitHub codesp
 
 - Java 25
 - Maven
-- Gradle
-- Quarkus CLI
-- PostgreSQL 16 in a separate container (see [docker-compose.yml](docker-compose.yml))
+- PostgreSQL in a separate container (see [docker-compose.yml](docker-compose.yml))
+- [Azure CLI](https://learn.microsoft.com/cli/azure/) (so you can run `az` commands directly)
 - [Azure Developer CLI](https://learn.microsoft.com/azure/developer/azure-developer-cli/overview) (so you can run `azd` commands directly).

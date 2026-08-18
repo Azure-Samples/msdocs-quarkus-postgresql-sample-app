@@ -28,7 +28,7 @@ services:
 
   db:
     container_name: postgresdb
-    image: postgres:16
+    image: postgres:16-bookworm
     restart: unless-stopped
     volumes:
       - postgres-data:/var/lib/postgresql/data
