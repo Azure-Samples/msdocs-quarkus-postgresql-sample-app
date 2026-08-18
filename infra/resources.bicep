@@ -178,7 +178,7 @@ resource cachePrivateEndpoint 'Microsoft.Network/privateEndpoints@2024-03-01' = 
   }
 }
 resource privateDnsZoneCache 'Microsoft.Network/privateDnsZones@2024-06-01' = {
-  name: 'privatelink.redisenterprise.cache.azure.net'
+  name: 'privatelink.redis.azure.net'
   location: 'global'
   dependsOn: [
     virtualNetwork
