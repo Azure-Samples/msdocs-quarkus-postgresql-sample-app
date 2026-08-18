@@ -145,7 +145,7 @@ resource privateDnsZoneDB 'Microsoft.Network/privateDnsZones@2024-06-01' = {
   }  
 }
 
-// Resources needed to secure Redis Cache behind a private endpoint
+// Resources needed to secure Azure Managed Redis behind a private endpoint
 resource cachePrivateEndpoint 'Microsoft.Network/privateEndpoints@2024-03-01' = {
   name: '${appName}-cache-privateEndpoint'
   location: location
@@ -158,7 +158,7 @@ resource cachePrivateEndpoint 'Microsoft.Network/privateEndpoints@2024-03-01' = 
         name: '${appName}-cache-privateEndpoint'
         properties: {
           privateLinkServiceId: redisCache.id
-          groupIds: ['redisCache']
+          groupIds: ['redisEnterprise']
         }
       }
     ]
@@ -178,7 +178,7 @@ resource cachePrivateEndpoint 'Microsoft.Network/privateEndpoints@2024-03-01' = 
   }
 }
 resource privateDnsZoneCache 'Microsoft.Network/privateDnsZones@2024-06-01' = {
-  name: 'privatelink.redis.cache.windows.net'
+  name: 'privatelink.redis.azure.net'
   location: 'global'
   dependsOn: [
     virtualNetwork
@@ -238,7 +238,7 @@ resource dbserver 'Microsoft.DBforPostgreSQL/flexibleServers@2022-01-20-preview'
     tier: 'Burstable'
   }
   properties: {
-    version: '12'
+    version: '16'
     administratorLogin: 'postgresadmin'
     administratorLoginPassword: databasePassword
     storage: {
@@ -271,21 +271,23 @@ resource dbserver 'Microsoft.DBforPostgreSQL/flexibleServers@2022-01-20-preview'
   ]
 }
 
-// The Redis cache is configured to the minimum pricing tier
-resource redisCache 'Microsoft.Cache/redis@2024-11-01' = {
+// Azure Managed Redis configured to the minimum pricing tier.
+resource redisCache 'Microsoft.Cache/redisEnterprise@2026-02-01-preview' = {
   name: '${appName}-cache'
   location: location
+  sku: {
+    name: 'Balanced_B0'
+  }
   properties: {
-    sku: {
-      name: 'Basic'
-      family: 'C'
-      capacity: 0
-    }
-    redisConfiguration: {}
-    enableNonSslPort: false
-    redisVersion: '6'
-    publicNetworkAccess: 'Disabled'
     minimumTlsVersion: '1.2'
+    publicNetworkAccess: 'Disabled'
+  }
+
+  resource redisDatabase 'databases@2026-02-01-preview' = {
+    name: 'default'
+    properties: {
+      accessKeysAuthentication: 'Enabled'
+    }
   }
 }
 
@@ -308,7 +310,7 @@ resource web 'Microsoft.Web/sites@2024-04-01' = {
   tags: union(tags, { 'azd-service-name': 'web' }) // Needed by AZD
   properties: {
     siteConfig: {
-      linuxFxVersion: 'JAVA|21-java21' // Set to Java 21, Java SE
+      linuxFxVersion: 'JAVA|25-java25' // Set to Java 25, Java SE
       vnetRouteAllEnabled: true // Route outbound traffic to the VNET
       ftpsState: 'Disabled'
       minTlsVersion: '1.2'
@@ -427,7 +429,7 @@ resource cacheConnector 'Microsoft.ServiceLinker/linkers@2024-04-01' = {
   properties: {
     targetService: {
       type: 'AzureResource'
-      id:  resourceId('Microsoft.Cache/Redis/Databases', redisCache.name, '0')
+      id: redisCache::redisDatabase.id
     }
     authInfo: {
       authType: 'accessKey'
@@ -509,8 +511,7 @@ var aggregatedAppSettings = union(
   reduce(dbConnector.listConfigurations().configurations, {}, (cur, next) => union(cur, { '${next.name}': checkAndFormatSecrets(next) })), 
   reduce(cacheConnector.listConfigurations().configurations, {}, (cur, next) => union(cur, { '${next.name}': checkAndFormatSecrets(next) })), 
   {
-    // Add other app settings here, for example:
-    // 'FOO': 'BAR'
+    JAVA_OPTS: '--add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.invoke=ALL-UNNAMED'
   }
 )
 resource appsettings 'Microsoft.Web/sites/config@2024-04-01' = {
