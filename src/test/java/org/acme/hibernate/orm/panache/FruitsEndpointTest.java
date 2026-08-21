@@ -7,8 +7,10 @@ import static org.hamcrest.core.IsNot.not;
 import org.junit.jupiter.api.Test;
 
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.security.TestSecurity;
 
 @QuarkusTest
+@TestSecurity(user = "test-user", roles = "fruit-manager")
 public class FruitsEndpointTest {
 
     @Test

@@ -2,6 +2,7 @@ package org.acme.hibernate.orm.panache.repository;
 
 import java.util.List;
 
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -51,6 +52,7 @@ public class FruitRepositoryResource {
     }
 
     @POST
+    @RolesAllowed("fruit-manager")
     @Transactional
     public Response create(Fruit fruit) {
         if (fruit.id != null) {
@@ -63,6 +65,7 @@ public class FruitRepositoryResource {
 
     @PUT
     @Path("{id}")
+    @RolesAllowed("fruit-manager")
     @Transactional
     public Fruit update(Long id, Fruit fruit) {
         if (fruit.name == null) {
@@ -82,6 +85,7 @@ public class FruitRepositoryResource {
 
     @DELETE
     @Path("{id}")
+    @RolesAllowed("fruit-manager")
     @Transactional
     public Response delete(Long id) {
         Fruit entity = fruitRepository.findById(id);
