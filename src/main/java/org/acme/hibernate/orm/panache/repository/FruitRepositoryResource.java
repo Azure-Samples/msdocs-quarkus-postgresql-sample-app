@@ -27,7 +27,7 @@ import io.quarkus.panache.common.Sort;
 
 @Path("repository/fruits")
 @ApplicationScoped
-// This tutorial intentionally exposes the simple CRUD scenario without authentication.
+// Anonymous CRUD access is by design for this simple tutorial scenario.
 @PermitAll
 @Produces("application/json")
 @Consumes("application/json")
