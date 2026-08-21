@@ -2,6 +2,7 @@ package org.acme.hibernate.orm.panache.entity;
 
 import java.util.List;
 
+import jakarta.annotation.security.PermitAll;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -27,6 +28,8 @@ import io.quarkus.panache.common.Sort;
 
 @Path("entity/fruits")
 @ApplicationScoped
+// Anonymous CRUD access is by design for this simple tutorial scenario.
+@PermitAll
 @Produces("application/json")
 @Consumes("application/json")
 public class FruitEntityResource {
