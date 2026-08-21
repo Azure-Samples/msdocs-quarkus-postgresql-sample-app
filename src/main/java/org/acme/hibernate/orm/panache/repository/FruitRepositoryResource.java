@@ -2,7 +2,7 @@ package org.acme.hibernate.orm.panache.repository;
 
 import java.util.List;
 
-import jakarta.annotation.security.RolesAllowed;
+import jakarta.annotation.security.PermitAll;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -27,6 +27,8 @@ import io.quarkus.panache.common.Sort;
 
 @Path("repository/fruits")
 @ApplicationScoped
+// This tutorial intentionally exposes the simple CRUD scenario without authentication.
+@PermitAll
 @Produces("application/json")
 @Consumes("application/json")
 public class FruitRepositoryResource {
@@ -52,7 +54,6 @@ public class FruitRepositoryResource {
     }
 
     @POST
-    @RolesAllowed("fruit-manager")
     @Transactional
     public Response create(Fruit fruit) {
         if (fruit.id != null) {
@@ -65,7 +66,6 @@ public class FruitRepositoryResource {
 
     @PUT
     @Path("{id}")
-    @RolesAllowed("fruit-manager")
     @Transactional
     public Fruit update(Long id, Fruit fruit) {
         if (fruit.name == null) {
@@ -85,7 +85,6 @@ public class FruitRepositoryResource {
 
     @DELETE
     @Path("{id}")
-    @RolesAllowed("fruit-manager")
     @Transactional
     public Response delete(Long id) {
         Fruit entity = fruitRepository.findById(id);
